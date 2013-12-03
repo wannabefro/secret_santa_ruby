@@ -63,7 +63,13 @@ class SecretSanta
     @group.user ||= set_user
     @password ||= set_password
     CSV.open('secret_santa.csv', 'a+', headers: true) do |file|
-      file.puts [Base64.encode64(@group.user), Base64.encode64(@password), Marshal.dump(@group)]
+      data = [Base64.encode64(@group.user), Base64.encode64(@password), Marshal.dump(@group)]
+      previous_data = file.find {|row| row['user'] == Base64.encode64(@group.user)}
+      if previous_data
+        previous_data = data
+      else
+        file.puts data
+      end
     end
     puts "Successfully saved group"
   end
