@@ -16,8 +16,17 @@ module Validations
   end
 end
 
+module SantaHelper
+  
+  def unique_person(group, person)
+    !group.participants.any?{|x| x.name == person[0] && x.number == person[1]}
+  end
+
+end
+
 class SecretSanta
   include Validations
+  include SantaHelper
   attr_reader :group
   
   def initialize
@@ -39,7 +48,7 @@ class SecretSanta
       case option
       when 1 then get_participants
       when 2 then view_participants
-      when 3 then 'hello'
+      when 3 then match_make
       when 4 then save
       when 5 then load_group
       when 6 then quit
@@ -98,8 +107,21 @@ class SecretSanta
     ]
   end
 
+  def match_make
+    if group_exists
+      participants = @group.participants.map{|x| x.name}
+      @group.matches = Matchmaker.new(participants).match
+    else
+      puts 'You need some participants first'
+    end
+  end
+  
+  def group_exists
+    @group && @group.participants.any?
+  end
+
   def view_participants
-    if @group && @group.participants.any?
+    if group_exists
       @group.participants.each {|x| p x.name}
     else
       puts 'There are no participants currently'
@@ -131,7 +153,16 @@ class SecretSanta
     name = get_name(gets.chomp)
     puts "What is their phone number?"
     number = get_number(gets.chomp)
-    @group.participants << Participant.new(name, number)
+    @group.participants << Participant.new(name, number) if check_participant(name, number)
+  end
+
+  def check_participant(name, number)
+    if unique_person(@group, [name, number])
+      true
+    else
+      puts "You've already added this participant"
+      manual_input
+    end
   end
 
   def get_name(name)
@@ -175,9 +206,10 @@ class SecretSanta
 end
 
 class Group
-  attr_accessor :participants
+  attr_accessor :participants, :matches
   def initialize
     @participants = []
+    @matches = nil
   end
 end
 
@@ -191,18 +223,26 @@ class Participant
 end
 
 class Matchmaker
-  def initialize(participants, size=2)
+  def initialize(participants)
     @participants = participants
-    @size = size
+    @matches = {}
   end
 
   def match
-
+    receivers = @participants.dup
+    @participants.each do |participant|
+      receiver = receivers.reject{|x| x== participant}.sample
+      @matches[participant] = receiver
+      receivers.delete(receiver)
+    end
+    @matches
   end
 
 end
 
 class ParticipantReader
+  include SantaHelper
+
   def initialize(filename, group)
     @filename = filename
     @group = group
@@ -212,16 +252,12 @@ class ParticipantReader
     File.open(@filename) do |file|
       file.each_line do |person|
         person = person.chomp.split(',')
-        if unique_person(person)
+        if unique_person(@group, person)
           @group.participants << Participant.new(person[0], person[1])
         end
       end
     end
   end
 
-  private
-  def unique_person(person)
-    !@group.participants.any?{|x| x.name == person[0] && x.number == person[1]}
-  end
 end
 
