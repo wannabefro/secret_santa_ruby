@@ -244,13 +244,17 @@ class Matchmaker
   end
 
   def match
-    receivers = @participants.dup
-    @participants.each do |participant|
-      receiver = receivers.reject{|x| x== participant}.sample
-      @matches[participant] = receiver
-      receivers.delete(receiver)
+    begin
+      receivers = @participants.dup
+      @participants.each do |participant|
+        receiver = receivers.reject{|x| x== participant}.sample
+        @matches[participant] = receiver
+        receivers.delete(receiver)
+      end
+      @matches
+    rescue
+      match
     end
-    @matches
   end
 
 end
