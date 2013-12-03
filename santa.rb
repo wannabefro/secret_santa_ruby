@@ -60,31 +60,39 @@ class SecretSanta
   end
 
   def save
+    @group.user ||= set_user
     @password ||= set_password
     CSV.open('secret_santa.csv', 'a+', headers: true) do |file|
-      file.puts [Base64.encode64(@password), Marshal.dump(@group)]
+      file.puts [Base64.encode64(@group.user), Base64.encode64(@password), Marshal.dump(@group)]
     end
     puts "Successfully saved group"
   end
 
   def load_group
+    puts 'Please enter your username'
+    user = gets.chomp
     puts 'Please enter the password for your group'
     password = gets.chomp
-    if login(password)
+    if login(user, password)
       puts 'Successfully loaded group'
     else
       puts 'Sorry. Couldn\'t find that group'
     end
   end
 
-  def login(password)
+  def login(user, password)
     CSV.foreach('secret_santa.csv', headers: true) do |row|
-      if row['password'] == Base64.encode64(password)
+      if row['password'] == Base64.encode64(password) && row['user'] == Base64.encode64(user)
         @group = Marshal.load(row['group'])
         return true
       end
     end
     false
+  end
+
+  def set_user
+    puts 'Please enter a username'
+    @group.user = gets.chomp
   end
 
   def set_password
@@ -206,10 +214,11 @@ class SecretSanta
 end
 
 class Group
-  attr_accessor :participants, :matches
+  attr_accessor :participants, :matches, :user
   def initialize
     @participants = []
     @matches = nil
+    @user = nil
   end
 end
 
