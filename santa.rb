@@ -41,7 +41,7 @@ module Validations
 end
 
 module SantaHelper
-  
+
   def unique_person(group, person)
     !group.participants.any?{|x| x.name == person[0] && x.number == person[1]}
   end
@@ -53,7 +53,7 @@ class SecretSanta
   include SantaHelper
   include Encryption
   attr_reader :group
-  
+
   def initialize
     @group = Group.new
     @done = false
@@ -67,7 +67,7 @@ class SecretSanta
     choose_option(gets.chomp.to_i)
     main_menu if !@done
   end
-  
+
   def choose_option(option)
     if (1..choices.length).include?(option)
       case option
@@ -168,7 +168,7 @@ class SecretSanta
       puts 'You need some participants first'
     end
   end
-  
+
   def group_exists
     @group && @group.participants.any?
   end
@@ -243,10 +243,10 @@ class SecretSanta
       file
     else
       puts 'Sorry that\'s not a valid txt file'
-      get_file_name
+      main_menu
     end
   end
-  
+
   def valid_txt_file(file)
     File.exists?(file) && file =~ /(\.txt)\z/
   end
