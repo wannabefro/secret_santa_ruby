@@ -17,6 +17,6 @@ describe 'encryption' do
   end
 
   it 'should raise an error if the wrong password is given' do
-    lambda{(decrypt('wrong_password', encrypted_data))}.should raise_error(OpenSSL::Cipher::CipherError)
+    expect {decrypt('wrong_password', encrypted_data)}.to raise_error(RuntimeError, 'You provided the wrong key')
   end
 end

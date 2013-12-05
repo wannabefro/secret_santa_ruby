@@ -18,17 +18,21 @@ module Encryption
     aes = OpenSSL::Cipher.new('AES-256-CBC')
     aes.decrypt
     aes.key = key
-    aes.update(data) + aes.final
+    begin
+      aes.update(data) + aes.final
+    rescue
+      raise 'You provided the wrong key'
+    end
   end
 end
 
 module Validations
   def numerical?(number)
-    number =~ /\d+/   
+    number =~ /\A\d+\z/ ? true : false
   end
 
   def wordical?(word)
-    word =~ /[a-zA-Z\s]+/
+    word =~ /\A[a-zA-Z\s]+\z/ ? true : false
   end
 
   def phone_number?(number)
@@ -84,12 +88,14 @@ class SecretSanta
     @group.user ||= set_user
     @password ||= set_password
     CSV.open('secret_santa.csv', 'a+', encoding: 'iso-8859-1', headers: true) do |file|
-      data = [@group.user, encrypt( @password, Marshal.dump(@group))]
       previous_data = file.find {|row| row['user'] == @group.user}
       if previous_data
         if decrypt(@password, previous_data['group'])
-          previous_data = data
+          #TODO update data (delete row and append new row)
+          previous_data.delete('user')
+          previous_data.delete('group')
         end
+        write_data(@group, @password)
       else
         write_data(@group, @password)
       end
